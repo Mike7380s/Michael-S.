@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Mastery Quest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Properties for new color palette */
+        :root {
+            --custom-red: #EE001E;
+            --custom-cream: #F6F0E2;
+            --custom-black: #000000;
+            --custom-yellow: #F8FF3C;
+            --custom-white: #FFFFFF;
+            --custom-light-red-tint: #FDECEA; /* Lighter tint for incorrect backgrounds */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--custom-cream); /* Cream background */
+            color: var(--custom-black); /* Black text */
+        }
+        .game-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: var(--custom-white); /* White game card */
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .button-primary {
+            background-color: var(--custom-red); /* Red */
+            color: var(--custom-white);
+        }
+        .button-primary:hover {
+            filter: brightness(90%);
+        }
+        .button-secondary { /* General option button style before selection */
+            background-color: var(--custom-white);
+            color: var(--custom-black);
+            border: 1px solid var(--custom-black);
+        }
+        .button-secondary:hover:not([disabled]) {
+            background-color: #f0f0f0; /* Light gray hover for secondary */
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 0.75rem;
+        }
+        .option-button.correct {
+            background-color: var(--custom-yellow) !important; /* Yellow background */
+            border-color: var(--custom-black) !important; /* Black border */
+            color: var(--custom-black) !important; /* Black text */
+        }
+        .option-button.incorrect {
+            background-color: var(--custom-light-red-tint) !important; /* Light red tint background */
+            border-color: var(--custom-red) !important; /* Red border */
+            color: var(--custom-black) !important; /* Black text */
+        }
+        .progress-bar-bg {
+            background-color: #e0e0e0; /* Light Gray */
+            border-radius: 9999px;
+            height: 1.5rem;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            background-color: var(--custom-red); /* Red fill */
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--custom-white); /* White text on progress bar */
+            font-weight: 600;
+        }
+        .story-icon { /* For start and end screen icons */
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            color: var(--custom-red); /* Red icon color */
+        }
+        .feedback-box {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+        }
+        .feedback-correct {
+            background-color: var(--custom-yellow); /* Yellow background */
+            color: var(--custom-black); /* Black text */
+            border-left: 4px solid var(--custom-black); /* Black border */
+        }
+        .feedback-incorrect {
+            background-color: var(--custom-light-red-tint); /* Light red tint background */
+            color: var(--custom-black); /* Black text */
+            border-left: 4px solid var(--custom-red); /* Red border */
+        }
+        /* Animation for elements appearing */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .character-level {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            padding: 0.75rem;
+            background-color: #fdfbf5; /* Lighter cream, derived from F6F0E2 */
+            border-radius: 8px;
+            border: 2px dashed var(--custom-red); /* Red dashed border */
+        }
+        .character-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 0.75rem;
+            color: var(--custom-red); /* Red icon */
+        }
+        .level-text {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600;
+            color: var(--custom-black); /* Black text */
+        }
+        /* Specific text color overrides */
+        .title-red {
+            color: var(--custom-red);
+        }
+        .text-strong-red {
+             color: var(--custom-red);
+             font-weight: bold;
+        }
+        .text-emphasis-black {
+            color: var(--custom-black);
+            font-weight: bold;
+        }
+         .summary-item {
+            padding: 0.75rem;
+            background-color: var(--custom-white);
+            border: 1px solid var(--custom-cream);
+            border-left: 3px solid var(--custom-red);
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        .summary-item p { color: var(--custom-black); }
+        .summary-item .font-semibold { color: var(--custom-red); } /* Question text in summary */
+        .summary-item .text-red-600 { color: var(--custom-red); } /* Your answer if wrong */
+        .summary-item .text-green-700 { color: var(--custom-black); font-weight: bold; } /* Correct answer text */
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div id="gameContainer" class="game-container">
+        <div id="startScreen" class="text-center fade-in">
+            <svg class="story-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+            <h1 class="text-3xl font-bold mb-4 title-red">Welcome to Meeting Mastery Quest!</h1>
+            <p class="mb-2 text-slate-700" style="color: var(--custom-black);">You are a <strong class="text-strong-red">Meeting Novice</strong>, eager to learn the secrets of effective meetings.</p>
+            <p class="mb-6 text-slate-600" style="color: var(--custom-black);">Answer 6 questions to rise through the ranks and become a <strong class="text-strong-red">Meeting Master</strong>. Each correct answer brings you closer to peak productivity!</p>
+            <button id="startButton" class="button button-primary text-lg">Start Your Quest!</button>
+        </div>
+
+        <div id="gameScreen" class="hidden fade-in">
+            <div id="characterLevelDisplay" class="character-level">
+                <svg id="playerIcon" class="character-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                </svg>
+                <span id="levelText" class="level-text">Current Rank: Meeting Novice</span>
+            </div>
+
+            <div class="mb-6">
+                <h2 class="text-sm font-semibold title-red mb-1">Question <span id="questionNumber"></span> of 6</h2>
+                <div class="progress-bar-bg">
+                    <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;">0%</div>
+                </div>
+            </div>
+
+            <h2 id="questionText" class="text-xl font-semibold mb-6" style="color: var(--custom-black);"></h2>
+            <div id="optionsContainer" class="space-y-3">
+                </div>
+            <div id="feedbackContainer" class="mt-6">
+                </div>
+            <button id="nextButton" class="button button-primary mt-8 w-full hidden">Next Challenge</button>
+        </div>
+
+        <div id="endScreen" class="text-center hidden fade-in">
+             <svg class="story-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <h1 id="endGameTitle" class="text-3xl font-bold mb-4 title-red">Quest Complete!</h1>
+            <p id="endMessage" class="text-lg mb-4" style="color: var(--custom-black);"></p>
+            <p class="mb-2" style="color: var(--custom-black);">You've mastered <strong id="finalScore" class="text-strong-red">X</strong> out of 6 challenges.</p>
+            <div id="summaryContainer" class="mt-4 text-left space-y-2">
+                </div>
+            <button id="restartButton" class="button button-primary mt-8">Play Again?</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Data ---
+        const questions = [
+            // ... (questions remain the same as before)
+             {
+                level: 1,
+                text: "As a meeting ORGANIZER, what's the very first thing you should thoughtfully consider before scheduling a meeting?",
+                options: [
+                    { text: "Who to invite to the meeting.", isCorrect: false },
+                    { text: "If the meeting is the best way to reach objectives.", isCorrect: true },
+                    { text: "What snacks to provide.", isCorrect: false },
+                    { text: "The exact duration of the meeting.", isCorrect: false }
+                ],
+                explanation: "The guide states: 'Thoughtfully consider if the meeting is the best way to reach your objectives - Consider email, slack, or one on one conversations as a more effective way to proceed.' This is crucial to avoid unnecessary meetings."
+            },
+            {
+                level: 2,
+                text: "As a meeting PARTICIPANT, how should you respond to meeting invites?",
+                options: [
+                    { text: "Ignore it if you're busy.", isCorrect: false },
+                    { text: "Accept, decline, or delegate promptly, and inform the organizer.", isCorrect: true },
+                    { text: "Only accept if the organizer is your manager.", isCorrect: false },
+                    { text: "Wait until the last minute to decide.", isCorrect: false }
+                ],
+                explanation: "The guide advises participants to: 'Respond to meeting invites promptly. Accept, decline, or delegate, and inform the organizer. If declining, provide a reason and suggest alternatives.'"
+            },
+            {
+                level: 3,
+                text: "To help participants come prepared, what should an organizer share ahead of time?",
+                options: [
+                    { text: "A list of potential problems.", isCorrect: false },
+                    { text: "Their personal opinions on the topics.", isCorrect: false },
+                    { text: "An Agenda.", isCorrect: true },
+                    { text: "A request for coffee preferences.", isCorrect: false }
+                ],
+                explanation: "The guide emphasizes: 'Have an Agenda. Share it ahead of time so participants can come prepared. An agenda can be a detailed outline of presenters and objectives or a simple list of topics...'"
+            },
+            {
+                level: 4,
+                text: "During a meeting, if you find the remaining topics are NOT relevant to you, what is the recommended action?",
+                options: [
+                    { text: "Start working on other tasks quietly.", isCorrect: false },
+                    { text: "Interrupt the speaker to change the topic.", isCorrect: false },
+                    { text: "Excuse yourself from the meeting.", isCorrect: true },
+                    { text: "Silently browse your phone.", isCorrect: false }
+                ],
+                explanation: "The guide suggests for participants: 'During the Meeting - Actively participate, avoid multitasking, excuse yourself if the remaining topics are not relevant to you.'"
+            },
+            {
+                level: 5,
+                text: "Who is primarily responsible for facilitating the meeting, keeping track of time, and ensuring the discussion stays on topic?",
+                options: [
+                    { text: "The most senior person in the room.", isCorrect: false },
+                    { text: "Each participant is equally responsible.", isCorrect: false },
+                    { text: "The meeting organizer or an assigned facilitator.", isCorrect: true },
+                    { text: "The person who talks the most.", isCorrect: false }
+                ],
+                explanation: "According to the guide: 'During the Meeting - Facilitate the meeting. The organizer should facilitate, or assign a facilitator for the discussion to keep track of time and keep the meeting on topic.'"
+            },
+            {
+                level: 6,
+                text: "After a formal meeting, if notes and actions are required, within what timeframe should they ideally be sent?",
+                options: [
+                    { text: "Within one week.", isCorrect: false },
+                    { text: "By the end of the day.", isCorrect: false },
+                    { text: "Within 24 hours of the meeting.", isCorrect: true },
+                    { text: "Whenever the organizer has free time.", isCorrect: false }
+                ],
+                explanation: "The guide states: 'Close the Meeting - Recap and Send notes & actions as required... Send notes, if required, within 24 hours of the meeting.'"
+            }
+        ];
+
+        const playerLevels = [
+            // ... (playerLevels remain the same)
+            { name: "Meeting Novice", icon: '<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />' },
+            { name: "Agenda Apprentice", icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />' },
+            { name: "Participation Pro", icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />' },
+            { name: "Facilitation Champion", icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />' },
+            { name: "Feedback Virtuoso", icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />' },
+            { name: "Meeting Master", icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-12v4m-2-2h4m5 4l-3-3m0 0l-3 3m3-3v12M9 11l3-3m0 0l3 3m-3-3v12" />' },
+            { name: "Peak Productivity Achiever", icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />' }
+        ];
+
+        // --- DOM Elements ---
+        const startScreen = document.getElementById('startScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const endScreen = document.getElementById('endScreen');
+        const startButton = document.getElementById('startButton');
+        const nextButton = document.getElementById('nextButton');
+        const restartButton = document.getElementById('restartButton');
+        const questionText = document.getElementById('questionText');
+        const questionNumber = document.getElementById('questionNumber');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const feedbackContainer = document.getElementById('feedbackContainer');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const endMessage = document.getElementById('endMessage');
+        const finalScore = document.getElementById('finalScore');
+        const summaryContainer = document.getElementById('summaryContainer');
+        const characterLevelDisplay = document.getElementById('characterLevelDisplay');
+        const playerIcon = document.getElementById('playerIcon');
+        const levelText = document.getElementById('levelText');
+        const endGameTitle = document.getElementById('endGameTitle');
+
+
+        // --- Game State ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answeredQuestions = [];
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', startGame);
+        nextButton.addEventListener('click', loadNextQuestion);
+        restartButton.addEventListener('click', startGame);
+
+        // --- Game Logic Functions ---
+        function startGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            answeredQuestions = [];
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            gameScreen.classList.add('fade-in');
+            // Move character display to game screen if it was on end screen
+            gameScreen.insertBefore(characterLevelDisplay, gameScreen.firstChild);
+            updatePlayerLevel();
+            loadQuestion();
+        }
+
+        function updatePlayerLevel() {
+            const currentLevelData = playerLevels[currentQuestionIndex] || playerLevels[playerLevels.length -1];
+            playerIcon.innerHTML = currentLevelData.icon;
+            levelText.textContent = `Current Rank: ${currentLevelData.name}`;
+            characterLevelDisplay.classList.remove('fade-in');
+            void characterLevelDisplay.offsetWidth; 
+            characterLevelDisplay.classList.add('fade-in');
+        }
+
+        function loadQuestion() {
+            feedbackContainer.innerHTML = '';
+            nextButton.classList.add('hidden');
+            optionsContainer.innerHTML = ''; 
+
+            if (currentQuestionIndex < questions.length) {
+                const question = questions[currentQuestionIndex];
+                questionText.textContent = question.text;
+                questionNumber.textContent = currentQuestionIndex + 1;
+                
+                updateProgressBar();
+                // updatePlayerLevel(); // Called in startGame and loadNextQuestion
+
+                question.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option.text;
+                    // Apply button-secondary for default option button styling
+                    button.classList.add('button', 'option-button', 'button-secondary');
+                    button.addEventListener('click', () => selectAnswer(option, button, question.options, question.explanation));
+                    optionsContainer.appendChild(button);
+                });
+                questionText.classList.add('fade-in');
+                optionsContainer.classList.add('fade-in');
+                setTimeout(() => {
+                    questionText.classList.remove('fade-in');
+                    optionsContainer.classList.remove('fade-in');
+                }, 500);
+            } else {
+                endGame();
+            }
+        }
+
+        function selectAnswer(selectedOption, selectedButton, allOptions, explanation) {
+            optionsContainer.querySelectorAll('.option-button').forEach(btn => {
+                btn.disabled = true;
+                const optionText = btn.textContent;
+                const correspondingOption = allOptions.find(opt => opt.text === optionText);
+                 // Remove general hover styling before applying correct/incorrect
+                btn.classList.remove('button-secondary');
+                if (correspondingOption.isCorrect) {
+                    btn.classList.add('correct');
+                } else if (btn === selectedButton && !selectedOption.isCorrect) {
+                    // Only add 'incorrect' to the one they clicked if it's wrong
+                    btn.classList.add('incorrect');
+                }
+            });
+
+            let isCorrectCurrentAnswer = selectedOption.isCorrect;
+
+            if (isCorrectCurrentAnswer) {
+                score++;
+                // selectedButton already styled by the loop above
+                feedbackContainer.innerHTML = `
+                    <div class="feedback-box feedback-correct fade-in">
+                        <strong class="font-semibold">Correct!</strong> Great job!
+                    </div>`;
+            } else {
+                // selectedButton already styled by the loop above
+                feedbackContainer.innerHTML = `
+                    <div class="feedback-box feedback-incorrect fade-in">
+                        <strong class="font-semibold">Not quite.</strong>
+                        <p class="mt-1">${explanation}</p>
+                    </div>`;
+            }
+            
+            answeredQuestions.push({
+                question: questions[currentQuestionIndex].text,
+                selectedAnswerText: selectedOption.text,
+                correctAnswerText: allOptions.find(opt => opt.isCorrect).text,
+                isCorrect: isCorrectCurrentAnswer,
+                explanation: explanation
+            });
+
+            nextButton.classList.remove('hidden');
+            nextButton.classList.add('fade-in');
+            setTimeout(() => nextButton.classList.remove('fade-in'), 500);
+        }
+
+        function updateProgressBar() {
+            const progressPercentage = ((currentQuestionIndex) / questions.length) * 100;
+            progressBarFill.style.width = `${progressPercentage}%`;
+            progressBarFill.textContent = `${Math.round(progressPercentage)}%`;
+        }
+        
+        function loadNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                updatePlayerLevel(); 
+            }
+            loadQuestion();
+        }
+
+        function endGame() {
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            endScreen.classList.add('fade-in');
+            
+            progressBarFill.style.width = `100%`;
+            progressBarFill.textContent = `100%`;
+
+            finalScore.textContent = `${score}`;
+            let endMsgText = "";
+            let finalLevelData = playerLevels[playerLevels.length -1]; // Default to top rank
+
+            if (score === questions.length) {
+                endMsgText = "Congratulations, Meeting Master! You've achieved Peak Productivity!";
+                finalLevelData = playerLevels[playerLevels.length -1];
+                endGameTitle.textContent = "Peak Productivity Achieved!";
+                endGameTitle.style.color = "var(--custom-red)";
+            } else if (score >= questions.length * 0.66) { // More than 2/3 correct
+                endMsgText = "Well done, skilled strategist! You're well on your way to mastering meetings.";
+                finalLevelData = playerLevels[4]; // Feedback Virtuoso
+                 endGameTitle.textContent = "Quest Complete!";
+            } else if (score >= questions.length * 0.33) { // More than 1/3 correct
+                 endMsgText = "Good effort! Review the feedback and try again to become a Meeting Master.";
+                 finalLevelData = playerLevels[2]; // Participation Pro
+                  endGameTitle.textContent = "Quest Complete!";
+            }
+            else {
+                endMsgText = "Keep practicing! Every master starts as a novice. Review the feedback and try again!";
+                finalLevelData = playerLevels[0]; // Novice
+                 endGameTitle.textContent = "Keep Learning!";
+            }
+            endMessage.textContent = endMsgText;
+            
+            // Update character display for end screen
+            playerIcon.innerHTML = finalLevelData.icon;
+            levelText.textContent = `Final Rank: ${finalLevelData.name}`;
+            endScreen.insertBefore(characterLevelDisplay, endGameTitle); 
+
+            summaryContainer.innerHTML = ''; 
+            const wrongAnswers = answeredQuestions.filter(aq => !aq.isCorrect);
+            if (wrongAnswers.length > 0) {
+                const summaryTitleEl = document.createElement('h3');
+                summaryTitleEl.textContent = "Areas to review:";
+                summaryTitleEl.className = "text-lg font-semibold mb-2";
+                summaryTitleEl.style.color = "var(--custom-black)";
+                summaryContainer.appendChild(summaryTitleEl);
+
+                wrongAnswers.forEach(aq => {
+                    const item = document.createElement('div');
+                    item.className = 'summary-item fade-in'; // Added fade-in
+                    item.innerHTML = `
+                        <p class="font-semibold">Question: ${aq.question}</p>
+                        <p style="color: var(--custom-red);">Your answer: ${aq.selectedAnswerText}</p>
+                        <p class="text-emphasis-black">Correct answer: ${aq.correctAnswerText}</p>
+                        <p class="text-sm mt-1"><strong>Explanation:</strong> ${aq.explanation}</p>
+                    `;
+                    summaryContainer.appendChild(item);
+                });
+            } else if (score === questions.length) {
+                 const perfectScoreMsg = document.createElement('p');
+                 perfectScoreMsg.textContent = "You got all questions correct! Truly a Meeting Master!";
+                 perfectScoreMsg.style.color = "var(--custom-red)"; // Use red for emphasis
+                 perfectScoreMsg.classList.add = "font-semibold";
+                 summaryContainer.appendChild(perfectScoreMsg);
+            }
+        }
+
+        gameScreen.classList.add('hidden');
+        endScreen.classList.add('hidden');
+    </script>
+</body>
+</html>
